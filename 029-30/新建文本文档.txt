@@ -1,0 +1,56 @@
+**from selenium** **import webdriver
+\**import requests
+\*\*import time
+\*\*import re
+\*\*from chaojiying \*\*import Chaojiying_Client
+\*\*from selenium.common.exceptions \*\*import NoSuchElementException
+
+url=\*\*'https://accounts.douban.com/login?alias=&redir=https%3A%2F%2Fwww.douban.com%2F&source=index_nav&error=1001'
+\*\*
+\*\*
+\*\*def login(url):
+
+ option = webdriver.ChromeOptions()
+ option.add_argument(\*\*'disable-infobars') \*# 关闭自动化程序运行的提示
+ \*# option.add_argument('--headless') #隐藏浏览器窗口
+ \*driver = webdriver.Chrome(options=option)
+ headers = {\*\*'User-Agent': \*\*'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0'}
+ driver.get(url)
+ \*# 定位账户密码的输入框，并输入账号密码
+ \*username=driver.find_element_by_name(\*\*'form_email')
+ username.send_keys(\*\*'账户')
+ password=driver.find_element_by_name(\*\*'form_password')
+ password.send_keys(\*\*'密码')
+ \*#豆瓣登录时，一开始时没有验证码登录的
+ \*#使用try尝试定位验证码图片对应的id，如果没有找到，则直接点登录键登录
+ \*#因为测试时，网页已经出现验证码，暂时去不掉，所以这个功能没有测试。不知道是否有用
+ \*#在带验证码的页面，有效
+ \*\*\*try:
+ captcha=driver.find_element_by_id(\*\*"captcha_image")
+ \*\*except NoSuchElementException:
+ login_button = driver.find_element_by_name(\*\*'login').click()
+
+\*#获取验证码的地址，并下载到本地
+ \*captcha_image=captcha.get_attribute(\*\*'src')
+ response = requests.get(captcha_image, headers=headers)
+ \*\*with open(\*\*'code.jpg',\*\*'wb')\*\*as f:
+ f.write(response.content)
+ \*\*"""
+ \*\*打码平台 超级鹰 端口接入
+ \*\*"""
+ \*\*chaojiying = Chaojiying_Client(\*\*'chaojiyinghx', \*\*'hexia_chaojiying', \*\*'96001')
+ \*#识别之前下载的验证码图片
+ \*im = open(\*\*'code.jpg', \*\*'rb').read()
+ a = chaojiying.PostPic(im, 1902)
+ \*#平台识别以后，给到的是带有其他内容的字典，其中验证码对应的KEY是pic_str
+ \*captcha = a[\*\*'pic_str']
+ 
+ \*#找到验证码的输入框，并输入验证码
+ \*captcha_input=driver.find_element_by_name(\*\*'captcha-solution')
+ captcha_input.send_keys(captcha)
+
+ login_button=driver.find_element_by_name(\*\*'login').click()
+
+ time.sleep(1)
+
+login(url)\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\****
